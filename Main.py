@@ -24,20 +24,30 @@ df.columns = column_names_list
 
 #Data preparations
 
-#Changing Excel Date/Time format to  Python datetime format
+# Changing Excel Date/Time format to  Python datetime format
 import xlrd
 PyDate = pd.Series(df.Date)
-print (PyDate)
+#print (PyDate)
 
 for i in range(len(df.Date)):
     PyDate[i] = xlrd.xldate.xldate_as_datetime(df.Date[i], 0)  # Datemode = 0
 
 df.Date = PyDate
-print (df.Date)
+#print (df.Date)
 
-df['Program1']
+#Delete second column of programm set temperature
+del df['Program1']
 
+import matplotlib.pyplot as plt
 
+plt.plot(df['Date'], df['Program'], label = 'Program')
+plt.plot(df['Date'], df['Oven'], label = 'Oven')
+plt.plot(df['Date'], df['Top'], label = 'Top')
+plt.plot(df['Date'], df['Bottom'], label = 'Bottom')
+
+plt.xlabel('Date/Time')
+plt.ylabel('Temperature, F')
+plt.show()
 
 
 
