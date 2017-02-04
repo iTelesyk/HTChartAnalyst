@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import datetime as dt
 
 #------------------Reading raw data from file------------------
 #Selection of file to read
@@ -33,13 +34,17 @@ for i in range(len(df.Date)):
 df.Date = PyDate
 
 #Heat treatment card magic numbers
-min_load_temp = 400 #minimal temperature before heat treatment should start
-ht_nominal_temp = 1050
-ht_nominal_temp_deviation = 25 
+min_load_temp = 300 #F - minimal temperature before heat treatment should start
+ht_nominal_temp = 1050 #F
+ht_nominal_temp_deviation = 25 #F
 ht_min_temp = ht_nominal_temp-ht_nominal_temp_deviation
 ht_max_temp = ht_nominal_temp+ht_nominal_temp_deviation 
-max_heating_rate = 160
-max_cooling_rate = 150
+max_heating_rate = 172 #F/hour  #!!!
+max_cooling_rate = 172 #F/hour
+ht_min_duration_rec = dt.time(hour=3, minute=30)
+ht_max_duration_rec = dt.time(hour=4, minute=30)
+ht_min_duration_acceptable = dt.time(hour=3)
+ht_max_duration_acceptable = dt.time(hour=4)
 
 
 
@@ -57,7 +62,7 @@ plt.xlabel('Date/Time')
 plt.ylabel('Temperature, F')
 
 
-plt.figure(num=None, figsize=(8, 6)) #changing plot field size
+#plt.figure(num=None, figsize=(8, 6)) #changing plot field size
 plt.show()
 
 
