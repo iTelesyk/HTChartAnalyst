@@ -1,6 +1,40 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import datetime as dt
+import numpy as np
+
+min_load_temp = 300 #F - minimal temperature before heat treatment should start
+cooling_end_temp = 400
+sr_nominal_temp = 1050 #F
+sr_nominal_temp_deviation = 25 #F
+sr_min_temp = sr_nominal_temp-sr_nominal_temp_deviation
+sr_max_temp = sr_nominal_temp+sr_nominal_temp_deviation
+max_heating_rate = 172 #F/hour  #!!!
+max_cooling_rate = 172 #F/hour
+sr_min_duration_rec = dt.time(hour=3, minute=30)
+sr_max_duration_rec = dt.time(hour=4, minute=30)
+sr_min_duration_acceptable = dt.time(hour=3)
+sr_max_duration_acceptable = dt.time(hour=4)
+index_buffer = 10
+
+def find_reference_points (df, column_name):
+    ch_data = np.array(df[column_name])  # channel data
+    heating_start_index = np.argmax(ch_data >= min_load_temp) - 1
+    print(ch_data[heating_start_index ], ' ', heating_start_index )
+
+    sr_start_index = np.argmax(ch_data > sr_min_temp)
+    print(ch_data[sr_start_index ], ' ', sr_start_index)
+
+    sr_data = ch_data[sr_start_index:]
+    sr_end_index_relative = np.argmax(sr_data <= sr_min_temp)
+    sr_end_index = sr_end_index_relative + sr_start_index
+    print(ch_data[sr_end_index],' ',sr_end_index)
+
+    cooling_end_index_relative = np.argmax(sr_data < cooling_end_temp)
+    cooling_end_index = cooling_end_index_relative + sr_start_index
+    print(ch_data[cooling_end_index],' ',cooling_end_index)
+    return;
+
 
 #------------------Reading raw data from file------------------
 #Selection of file to read
@@ -26,44 +60,35 @@ del df[redundant_program_column_name]
 
 #------------------Data preparations------------------
 # Changing Excel Date/Time format to  Python datetime format
-import xlrd
-PyDate = pd.Series(df.Date)
-#!!! that should be fixed -> it should be the way to treat it as a vector, not a list of individual number
-for i in range(len(df.Date)):
-    PyDate[i] = xlrd.xldate.xldate_as_datetime(df.Date[i], 0)  # Datemode = 0
-df.Date = PyDate
+# import xlrd
+# PyDate = pd.Series(df.Date)
+# #!!! that should be fixed -> it should be the way to treat it as a vector, not a list of individual number
+# for i in range(len(df.Date)):
+#     PyDate[i] = xlrd.xldate.xldate_as_datetime(df.Date[i], 0)  # Datemode = 0
+# df.Date = PyDate
 
 #Heat treatment card magic numbers
-min_load_temp = 300 #F - minimal temperature before heat treatment should start
-ht_nominal_temp = 1050 #F
-ht_nominal_temp_deviation = 25 #F
-ht_min_temp = ht_nominal_temp-ht_nominal_temp_deviation
-ht_max_temp = ht_nominal_temp+ht_nominal_temp_deviation 
-max_heating_rate = 172 #F/hour  #!!!
-max_cooling_rate = 172 #F/hour
-ht_min_duration_rec = dt.time(hour=3, minute=30)
-ht_max_duration_rec = dt.time(hour=4, minute=30)
-ht_min_duration_acceptable = dt.time(hour=3)
-ht_max_duration_acceptable = dt.time(hour=4)
 
 
+#Finding significant points on graph
+find_reference_points(df,'Top')
+find_reference_points(df,'Bottom')
 
-
-#------------------Plotting the data------------------
-
-#Adding line on graph for each chanel
-for i in range(len(chanel_names_list)):
-    plt.plot(df['Date'], df[chanel_names_list[i]], label=chanel_names_list[i])
-
-plt.grid() #turn on grid
-
-plt.legend(chanel_names_list)
-plt.xlabel('Date/Time')
-plt.ylabel('Temperature, F')
-
-
-#plt.figure(num=None, figsize=(8, 6)) #changing plot field size
-plt.show()
+# ------------------Plotting the data------------------
+#
+# #Adding line on graph for each chanel
+# for i in range(len(chanel_names_list)):
+#     plt.plot(df['Date'], df[chanel_names_list[i]], label=chanel_names_list[i])
+#
+# plt.grid() #turn on grid
+#
+# plt.legend(chanel_names_list)
+# plt.xlabel('Date/Time')
+# plt.ylabel('Temperature, F')
+#
+#
+# #plt.figure(num=None, figsize=(8, 6)) #changing plot field size
+# plt.show()
 
 
 
