@@ -1,9 +1,5 @@
-from pandas import DataFrame, read_csv
-
 import matplotlib.pyplot as plt
 import pandas as pd
-import sys
-import matplotlib
 
 #------------------Reading raw data from file------------------
 #Selection of file to read
@@ -31,18 +27,24 @@ del df[redundant_program_column_name]
 # Changing Excel Date/Time format to  Python datetime format
 import xlrd
 PyDate = pd.Series(df.Date)
-#print (PyDate)
-
 #!!! that should be fixed -> it should be the way to treat it as a vector, not a list of individual number
 for i in range(len(df.Date)):
     PyDate[i] = xlrd.xldate.xldate_as_datetime(df.Date[i], 0)  # Datemode = 0
-
 df.Date = PyDate
-#print (df.Date)
+
+#Heat treatment card magic numbers
+min_load_temp = 400 #minimal temperature before heat treatment should start
+ht_nominal_temp = 1050
+ht_nominal_temp_deviation = 25 
+ht_min_temp = ht_nominal_temp-ht_nominal_temp_deviation
+ht_max_temp = ht_nominal_temp+ht_nominal_temp_deviation 
+max_heating_rate = 160
+max_cooling_rate = 150
+
+
 
 
 #------------------Plotting the data------------------
-import matplotlib.pyplot as plt
 
 #Adding line on graph for each chanel
 for i in range(len(chanel_names_list)):
@@ -53,6 +55,9 @@ plt.grid() #turn on grid
 plt.legend(chanel_names_list)
 plt.xlabel('Date/Time')
 plt.ylabel('Temperature, F')
+
+
+plt.figure(num=None, figsize=(8, 6)) #changing plot field size
 plt.show()
 
 
