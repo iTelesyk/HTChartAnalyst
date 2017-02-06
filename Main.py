@@ -80,8 +80,8 @@ point_dict_top= find_reference_points(df, 'Top')
 point_dict_btn = find_reference_points(df, 'Bottom')
 
 # Finding heat rates
-date = np.array(df['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']])
-heating = np.array(df['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']])
+date = np.array(df['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
+heating = np.array(df['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
 keep_going = True
 prev_timepoint = date[0]
 print(prev_timepoint)
