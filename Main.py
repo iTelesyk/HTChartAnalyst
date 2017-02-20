@@ -46,6 +46,24 @@ def find_reference_points (df, column_name, ht_card):
     reference_point_index_dict = {'heating_start_index':heating_start_index, 'sr_start_index':sr_start_index, 'sr_end_index':sr_end_index, 'cooling_end_index':cooling_end_index}
     return reference_point_index_dict;
 
+# returns index of next heating/cooling timepoint for given sorted datetime array
+def find_next_hour_point_index (date, prev_index):
+    if prev_index ==  -1: # -2 is code for reching and of array
+        return -2
+    hour_increment = 1
+    pp = date[prev_index] #previous point
+    next_point = dt.datetime(hour=pp.hour + hour_increment, year=pp.year, month=pp.month, day=pp.day,  minute= pp.minute) #creates next point w/ hour increment and w/o seconds
+    lager_that_point = date[date >= next_point] #creates list of timepoints starting with given amount of hours and minutes
+    if len(lager_that_point)>0:
+        point = lager_that_point[0] #picks first point from list
+        index = np.argmax(date >= point) #finds index of first point in given datetime array
+        return index
+    else:
+        return -1 #return -1 to include last point of given datetime array
+
+
+
+
 
 
 
@@ -91,18 +109,27 @@ point_dict_btn = find_reference_points(data_table, 'Bottom', ef_sr_card)
 
 # Finding heat rates
 date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
-heating = np.array(data_table['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
+temp = np.array(data_table['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
+
+index = 0
 keep_going = True
-prev_timepoint = date[0]
-print(prev_timepoint)
-heat_rate_list = ()
+timepoint_date_list = np.array([])
+timepoint_temp_list = np.array([])
 while keep_going:
-    timepoint = prev_timepoint + dt.timedelta(hours=1)
-    print(timepoint)
-    if timepoint > date[-1]:
+     timepoint_date_list = np.append(timepoint_date_list, date[index])
+     timepoint_temp_list = np.append(timepoint_temp_list, temp[index])
+     print(date[index],' ',temp[index])
+     next_index= find_next_hour_point_index(date, index)
+     if next_index >= -1: #we add -1 to include last point of heating/cooling curve
+        index = next_index
+     else:
         keep_going = False
-    else:
-        prev_timepoint = timepoint
+
+temp_change_rate_list = np.array([])
+for i in range(len(timepoint_temp_list)-1):
+    temp_change_rate = abs(timepoint_temp_list[i]-timepoint_temp_list[i+1])
+    temp_change_rate_list = np.append(temp_change_rate_list, temp_change_rate)
+print(temp_change_rate_list)
 
 # Finding stress relief duration
 
