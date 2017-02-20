@@ -19,14 +19,23 @@ class ht_card:
     sr_max_duration_acceptable = dt.time(hour = 4)
     index_buffer = 10 # imperical number
 
+class ht_cl_curve: #heating cooling data
+    timepoints =  np.array([])
+    temps = np.array([])
+    speed = np.array([])
+    max_rate = 0
+
 class ht_channel:
-    sr_duration = dt.time()
+    sr_duration = dt.time()  # stress relive duration
+    ht = ht_cl_curve
+    cl = ht_cl_curve
+    ref_points = dict({})
 
 class ht_chart:
     reference_point_index_dict = list()
-    channel = {'top': ht_channel(), 'btn': ht_channel()}
+    channel = {'Top': ht_channel(), 'Btn': ht_channel()}
 
-
+# finds critical point for stress releving cycle
 def find_reference_points (df, column_name, ht_card):
     ch_data = np.array(df[column_name])  # channel data
     heating_start_index = np.argmax(ch_data >= ht_card.min_load_temp) - 1
@@ -47,7 +56,7 @@ def find_reference_points (df, column_name, ht_card):
     return reference_point_index_dict;
 
 # returns index of next heating/cooling timepoint for given sorted datetime array
-def find_next_hour_point_index (date, prev_index):
+def find_next_hour_point_index (date: np.array, prev_index: "index of previous point"):
     if prev_index ==  -1: # -2 is code for reching and of array
         return -2
     hour_increment = 1
@@ -61,9 +70,31 @@ def find_next_hour_point_index (date, prev_index):
     else:
         return -1 #return -1 to include last point of given datetime array
 
+def find_ht_cl_rate(ht_cl_crv: ht_cl_curve, date:  np.array, temp: np.array):
+    index = 0
+    keep_going = True
+    timepoint_date_list = np.array([])
+    timepoint_temp_list = np.array([])
+    while keep_going:
+        timepoint_date_list = np.append(timepoint_date_list, date[index])
+        timepoint_temp_list = np.append(timepoint_temp_list, temp[index])
+        # print(date[index], ' ', temp[index])
+        next_index = find_next_hour_point_index(date, index)
+        if next_index >= -1:  # we add -1 to include last point of heating/cooling curve
+            index = next_index
+        else:
+            keep_going = False
 
+    temp_change_rate_list = np.array([])
 
+    for i in range(len(timepoint_temp_list) - 1):
+        temp_change_rate = abs(timepoint_temp_list[i] - timepoint_temp_list[i + 1])
+        temp_change_rate_list = np.append(temp_change_rate_list, temp_change_rate)
 
+    ht_cl_crv.timepoints = timepoint_date_list
+    ht_cl_crv.temps = timepoint_temp_list
+    ht_cl_crv.speed = temp_change_rate_list
+    ht_cl_crv.max_rate = max(temp_change_rate_list)
 
 
 
@@ -76,12 +107,12 @@ def find_next_hour_point_index (date, prev_index):
 #print(csv_path)
 
 number_of_colums_to_read = 6
-chanel_names_list = ['Program','Oven','Top','Bottom']
+chanel_names_list = ['Program','Oven','Top','Btn']
 column_names_list = list(chanel_names_list)
 column_names_list.insert(0,'Date')
 redundant_program_column_name = 'Program1'
 column_names_list.insert(2,redundant_program_column_name)
-#['Date','Program','Program1','Oven','Top','Bottom'] #Names for data columns
+#['Date','Program','Program1','Oven','Top','Btn'] #Names for data columns
 
 file_to_read = '17H008.csv' #csv file name
 
@@ -103,57 +134,58 @@ data_table.Date = PyDate
 
 # Finding significant points on graph
 ef_sr_card = ht_card()
-ef_sr = ht_chart()
+ef_sr = ht_chart() #end fittings stress relive chart
+
 point_dict_top= find_reference_points(data_table, 'Top', ef_sr_card)
-point_dict_btn = find_reference_points(data_table, 'Bottom', ef_sr_card)
+point_dict_btn = find_reference_points(data_table, 'Btn', ef_sr_card)
+ef_sr.channel['Top'].ref_points = point_dict_top
+ef_sr.channel['Btn'].ref_points = point_dict_btn
 
 # Finding heat rates
-date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
-temp = np.array(data_table['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
-
-index = 0
-keep_going = True
-timepoint_date_list = np.array([])
-timepoint_temp_list = np.array([])
-while keep_going:
-     timepoint_date_list = np.append(timepoint_date_list, date[index])
-     timepoint_temp_list = np.append(timepoint_temp_list, temp[index])
-     print(date[index],' ',temp[index])
-     next_index= find_next_hour_point_index(date, index)
-     if next_index >= -1: #we add -1 to include last point of heating/cooling curve
-        index = next_index
-     else:
-        keep_going = False
-
-temp_change_rate_list = np.array([])
-for i in range(len(timepoint_temp_list)-1):
-    temp_change_rate = abs(timepoint_temp_list[i]-timepoint_temp_list[i+1])
-    temp_change_rate_list = np.append(temp_change_rate_list, temp_change_rate)
-print(temp_change_rate_list)
+for channel in ('Top', 'Btn'):
+    date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
+    temp = np.array(data_table[channel][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
+    find_ht_cl_rate(ef_sr.channel[channel].ht, date, temp)
+    
+    date = np.array(data_table['Date'][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) # array of dates
+    temp = np.array(data_table[channel][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) #array of temperatures
+    find_ht_cl_rate(ef_sr.channel[channel].cl, date, temp)
+# date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
+# temp = np.array(data_table['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
+# find_ht_cl_rate(ef_sr.channel['Top'].ht, date, temp)
+# 
+# date = np.array(data_table['Date'][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) # array of dates
+# temp = np.array(data_table['Top'][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) #array of temperatures
+# find_ht_cl_rate(ef_sr.channel['Top'].cl, date, temp)
 
 # Finding stress relief duration
 
-ef_sr.channel['top'].sr_duration = data_table['Date'][point_dict_top['sr_end_index']] - data_table['Date'][point_dict_top['sr_start_index']]
-ef_sr.channel['btn'].sr_duration = data_table['Date'][point_dict_btn['sr_end_index']] - data_table['Date'][point_dict_btn['sr_start_index']]
+# Finding stress relief duration
+ef_sr.channel['Top'].sr_duration = data_table['Date'][point_dict_top['sr_end_index']] - data_table['Date'][point_dict_top['sr_start_index']]
+ef_sr.channel['Btn'].sr_duration = data_table['Date'][point_dict_btn['sr_end_index']] - data_table['Date'][point_dict_btn['sr_start_index']]
 
-print('Stress relief duration (Top):    ', ef_sr.channel['top'].sr_duration)
-print('Stress relief duration (Bottom): ', ef_sr.channel['btn'].sr_duration)
+#Printing results
+# for channel in ('Top', 'Btn'):
+#
+#     print('Stress relief duration (Top):    ', ef_sr.channel[channel].sr_duration)
+print('Stress relief duration (Top):    ', ef_sr.channel['Top'].sr_duration)
+print('Stress relief duration (Bottom): ', ef_sr.channel['Btn'].sr_duration)
 
 # ------------------Plotting the data------------------
-#
-# #Adding line on graph for each chanel
-# for i in range(len(chanel_names_list)):
-#     plt.plot(data_table['Date'], data_table[chanel_names_list[i]], label=chanel_names_list[i])
-#
-# plt.grid() #turn on grid
-#
-# plt.legend(chanel_names_list)
-# plt.xlabel('Date/Time')
-# plt.ylabel('Temperature, F')
-#
-#
-# #plt.figure(num=None, figsize=(8, 6)) #changing plot field size
-# plt.show()
+
+#Adding line on graph for each chanel
+for i in range(len(chanel_names_list)):
+    plt.plot(data_table['Date'], data_table[chanel_names_list[i]], label=chanel_names_list[i])
+
+plt.grid() #turn on grid
+
+plt.legend(chanel_names_list)
+plt.xlabel('Date/Time')
+plt.ylabel('Temperature, F')
+
+
+#plt.figure(num=None, figsize=(8, 6)) #changing plot field size
+plt.show()
 
 
 
