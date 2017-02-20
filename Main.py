@@ -142,14 +142,17 @@ ef_sr.channel['Top'].ref_points = point_dict_top
 ef_sr.channel['Btn'].ref_points = point_dict_btn
 
 # Finding heat rates
-for channel in ('Top', 'Btn'):
+for chnl in ('Top', 'Btn'):
     date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
-    temp = np.array(data_table[channel][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
-    find_ht_cl_rate(ef_sr.channel[channel].ht, date, temp)
+    temp = np.array(data_table[chnl][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
+    find_ht_cl_rate(ef_sr.channel[chnl].ht, date, temp)
     
     date = np.array(data_table['Date'][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) # array of dates
-    temp = np.array(data_table[channel][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) #array of temperatures
-    find_ht_cl_rate(ef_sr.channel[channel].cl, date, temp)
+    temp = np.array(data_table[chnl][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) #array of temperatures
+    find_ht_cl_rate(ef_sr.channel[chnl].cl, date, temp)
+
+    # Finding stress relief duration
+    ef_sr.channel[chnl].sr_duration = data_table['Date'][point_dict_top['sr_end_index']] - data_table['Date'][point_dict_top['sr_start_index']]
 # date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
 # temp = np.array(data_table['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
 # find_ht_cl_rate(ef_sr.channel['Top'].ht, date, temp)
@@ -160,32 +163,37 @@ for channel in ('Top', 'Btn'):
 
 # Finding stress relief duration
 
-# Finding stress relief duration
-ef_sr.channel['Top'].sr_duration = data_table['Date'][point_dict_top['sr_end_index']] - data_table['Date'][point_dict_top['sr_start_index']]
-ef_sr.channel['Btn'].sr_duration = data_table['Date'][point_dict_btn['sr_end_index']] - data_table['Date'][point_dict_btn['sr_start_index']]
+
+
 
 #Printing results
-# for channel in ('Top', 'Btn'):
-#
-#     print('Stress relief duration (Top):    ', ef_sr.channel[channel].sr_duration)
-print('Stress relief duration (Top):    ', ef_sr.channel['Top'].sr_duration)
-print('Stress relief duration (Bottom): ', ef_sr.channel['Btn'].sr_duration)
+for chnl in ('Top', 'Btn'):
+    print('Channel: ',chnl,' Heating up:')
+    # print(ef_sr.channel[chnl].ht.timepoints)
+    print('Channel: ', chnl, ' Max heating rate: ', ef_sr.channel[chnl].ht.max_rate,' F/hour')
+    print('Channel: ',chnl,' Stress relief duration: ', ef_sr.channel[chnl].sr_duration)
+    print('Channel: ',chnl,' Cooling down:')
+    # print(ef_sr.channel[chnl].cl.timepoints)
+    print('Channel: ', chnl, ' Max cooling rate: ', ef_sr.channel[chnl].ht.max_rate,' F/hour')
+    
+# print('Stress relief duration (Top):    ', ef_sr.channel['Top'].sr_duration)
+# print('Stress relief duration (Bottom): ', ef_sr.channel['Btn'].sr_duration)
 
 # ------------------Plotting the data------------------
 
 #Adding line on graph for each chanel
-for i in range(len(chanel_names_list)):
-    plt.plot(data_table['Date'], data_table[chanel_names_list[i]], label=chanel_names_list[i])
-
-plt.grid() #turn on grid
-
-plt.legend(chanel_names_list)
-plt.xlabel('Date/Time')
-plt.ylabel('Temperature, F')
-
-
-#plt.figure(num=None, figsize=(8, 6)) #changing plot field size
-plt.show()
+# for i in range(len(chanel_names_list)):
+#     plt.plot(data_table['Date'], data_table[chanel_names_list[i]], label=chanel_names_list[i])
+#
+# plt.grid() #turn on grid
+#
+# plt.legend(chanel_names_list)
+# plt.xlabel('Date/Time')
+# plt.ylabel('Temperature, F')
+#
+#
+# #plt.figure(num=None, figsize=(8, 6)) #changing plot field size
+# plt.show()
 
 
 
