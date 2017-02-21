@@ -173,7 +173,7 @@ for chnl in ('Top', 'Btn'):
     print('Channel:  {0:3s}  Max heating rate: {1:3.0f} F/hour'.format(chnl,ef_sr.channel[chnl].ht.max_rate))
 
     td = ef_sr.channel[chnl].sr_duration
-    print('Channel: {0} Stress relief duration: {1}'.format(chnl, td))
+    print('Channel: {0} Stress relief duration: {1}'.format(chnl, td))#!!! should use special format for timedelta
 
     print('Channel: ', chnl, ' Cooling down:')
     for i in range(len(ef_sr.channel[chnl].cl.timepoints)):
