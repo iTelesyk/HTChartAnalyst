@@ -173,13 +173,13 @@ for chnl in ('Top', 'Btn'):
     print('Channel:  {0:3s}  Max heating rate: {1:3.0f} F/hour'.format(chnl,ef_sr.channel[chnl].ht.max_rate))
 
     td = ef_sr.channel[chnl].sr_duration
-    print('Channel: {0} Stress relief duration: {1}'.format(chnl, td))#!!! should use special format for timedelta
+    print('Channel: {0} Stress relief duration: {1}'.format(chnl, dt.timedelta(seconds=td.seconds)))
 
     print('Channel: ', chnl, ' Cooling down:')
     for i in range(len(ef_sr.channel[chnl].cl.timepoints)):
         print('Time: {0:%H:%M:%S} Temperature: {1:3.1f}'.format(ef_sr.channel[chnl].cl.timepoints[i],ef_sr.channel[chnl].cl.temps[i]))
 
-    print('Channel:  {0:3s}  Max heating rate: {1:3.0f} F/hour'.format(chnl, ef_sr.channel[chnl].cl.max_rate))
+    print('Channel:  {0:3s}  Max cooling rate: {1:3.0f} F/hour'.format(chnl, ef_sr.channel[chnl].cl.max_rate))
 # ------------------Plotting the data------------------
 
 #Adding line on graph for each chanel
