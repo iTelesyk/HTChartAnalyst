@@ -20,20 +20,23 @@ class ht_card:
     index_buffer = 10 # imperical number
 
 class ht_cl_curve: #heating cooling data
-    timepoints =  np.array([])
-    temps = np.array([])
-    speed = np.array([])
-    max_rate = 0
+    def __init__(self):
+        self.timepoints =  np.array([])
+        self.temps = np.array([])
+        self.speed = np.array([])
+        self.max_rate = 0
 
 class ht_channel:
-    sr_duration = dt.time()  # stress relive duration
-    ht = ht_cl_curve
-    cl = ht_cl_curve
-    ref_points = dict({})
+    def __init__(self):
+        self.sr_duration = dt.time()  # stress relive duration
+        self.ht = ht_cl_curve()
+        self.cl = ht_cl_curve()
+        self.ref_points = dict({})
 
 class ht_chart:
-    reference_point_index_dict = list()
-    channel = {'Top': ht_channel(), 'Btn': ht_channel()}
+    def __init__(self):
+        self.oven_start_load_temp = -1
+        self.channel = {'Top': ht_channel(), 'Btn': ht_channel(), 'Program': ht_channel(), 'Oven': ht_channel()}
 
 # finds critical point for stress releving cycle
 def find_reference_points (df, column_name, ht_card):
@@ -132,53 +135,51 @@ for i in range(len(data_table.Date)):
 data_table.Date = PyDate
 
 
-# Finding significant points on graph
+
 ef_sr_card = ht_card()
 ef_sr = ht_chart() #end fittings stress relive chart
 
-point_dict_top= find_reference_points(data_table, 'Top', ef_sr_card)
-point_dict_btn = find_reference_points(data_table, 'Btn', ef_sr_card)
-ef_sr.channel['Top'].ref_points = point_dict_top
-ef_sr.channel['Btn'].ref_points = point_dict_btn
-
-# Finding heat rates
+ef_sr.oven_start_load_temp = data_table['Oven'][0]
 for chnl in ('Top', 'Btn'):
-    date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
-    temp = np.array(data_table[chnl][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
-    find_ht_cl_rate(ef_sr.channel[chnl].ht, date, temp)
-    
-    date = np.array(data_table['Date'][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) # array of dates
-    temp = np.array(data_table[chnl][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) #array of temperatures
-    find_ht_cl_rate(ef_sr.channel[chnl].cl, date, temp)
+    # Finding significant points on graph
+    ef_sr.channel[chnl].ref_points = find_reference_points(data_table, chnl, ef_sr_card)
+
+    # Finding heat rates
+    start = ef_sr.channel[chnl].ref_points['heating_start_index']
+    end = ef_sr.channel[chnl].ref_points['sr_start_index']
+    dates = np.array(data_table['Date'][start: end]) # array of dates
+    temps = np.array(data_table[chnl][start: end]) #array of temperatures
+    find_ht_cl_rate(ef_sr.channel[chnl].ht, dates, temps)
+    # print(chnl,' Heating: ',start,' ',end)
+
+    start = ef_sr.channel[chnl].ref_points['sr_end_index']
+    end = ef_sr.channel[chnl].ref_points['cooling_end_index']
+    dates = np.array(data_table['Date'][start: end]) # array of dates
+    temps = np.array(data_table[chnl][start: end]) #array of temperatures
+    find_ht_cl_rate(ef_sr.channel[chnl].cl, dates, temps)
+    # print(chnl, ' Cooling: ', start, ' ', end)
 
     # Finding stress relief duration
-    ef_sr.channel[chnl].sr_duration = data_table['Date'][point_dict_top['sr_end_index']] - data_table['Date'][point_dict_top['sr_start_index']]
-# date = np.array(data_table['Date'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) # array of dates
-# temp = np.array(data_table['Top'][point_dict_top['heating_start_index']: point_dict_top['sr_start_index']]) #array of temperatures
-# find_ht_cl_rate(ef_sr.channel['Top'].ht, date, temp)
-# 
-# date = np.array(data_table['Date'][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) # array of dates
-# temp = np.array(data_table['Top'][point_dict_top['sr_end_index']: point_dict_top['cooling_end_index']]) #array of temperatures
-# find_ht_cl_rate(ef_sr.channel['Top'].cl, date, temp)
+    start = ef_sr.channel[chnl].ref_points['sr_end_index']
+    end = ef_sr.channel[chnl].ref_points['cooling_end_index']
+    ef_sr.channel[chnl].sr_duration = data_table['Date'][ef_sr.channel[chnl].ref_points['sr_end_index']] - data_table['Date'][ef_sr.channel[chnl].ref_points['sr_start_index']]
 
-# Finding stress relief duration
-
-
-
-
-#Printing results
+# ------------------Printing result to console ------------------
+print('Oven load temperature: {:3.0f} F'.format(ef_sr.oven_start_load_temp))
 for chnl in ('Top', 'Btn'):
-    print('Channel: ',chnl,' Heating up:')
-    # print(ef_sr.channel[chnl].ht.timepoints)
-    print('Channel: ', chnl, ' Max heating rate: ', ef_sr.channel[chnl].ht.max_rate,' F/hour')
-    print('Channel: ',chnl,' Stress relief duration: ', ef_sr.channel[chnl].sr_duration)
-    print('Channel: ',chnl,' Cooling down:')
-    # print(ef_sr.channel[chnl].cl.timepoints)
-    print('Channel: ', chnl, ' Max cooling rate: ', ef_sr.channel[chnl].ht.max_rate,' F/hour')
-    
-# print('Stress relief duration (Top):    ', ef_sr.channel['Top'].sr_duration)
-# print('Stress relief duration (Bottom): ', ef_sr.channel['Btn'].sr_duration)
+    print('Channel: ', chnl, ' Heating up:')
+    for i in range(len(ef_sr.channel[chnl].ht.timepoints)):
+        print('Time: {0:%H:%M:%S} Temperature: {1:3.1f}'.format(ef_sr.channel[chnl].ht.timepoints[i],ef_sr.channel[chnl].ht.temps[i]))
+    print('Channel:  {0:3s}  Max heating rate: {1:3.0f} F/hour'.format(chnl,ef_sr.channel[chnl].ht.max_rate))
 
+    td = ef_sr.channel[chnl].sr_duration
+    print('Channel: {0} Stress relief duration: {1}'.format(chnl, td))
+
+    print('Channel: ', chnl, ' Cooling down:')
+    for i in range(len(ef_sr.channel[chnl].cl.timepoints)):
+        print('Time: {0:%H:%M:%S} Temperature: {1:3.1f}'.format(ef_sr.channel[chnl].cl.timepoints[i],ef_sr.channel[chnl].cl.temps[i]))
+
+    print('Channel:  {0:3s}  Max heating rate: {1:3.0f} F/hour'.format(chnl, ef_sr.channel[chnl].cl.max_rate))
 # ------------------Plotting the data------------------
 
 #Adding line on graph for each chanel
