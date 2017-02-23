@@ -186,18 +186,22 @@ for chnl in ('Top', 'Btn'):
 # ------------------Plotting the data------------------
 
 #Adding line on graph for each chanel
-# for i in range(len(chanel_names_list)):
-#     plt.plot(data_table['Date'], data_table[chanel_names_list[i]], label=chanel_names_list[i])
-#
-# plt.grid() #turn on grid
-#
-# plt.legend(chanel_names_list)
-# plt.xlabel('Date/Time')
-# plt.ylabel('Temperature, F')
-#
-#
-# #plt.figure(num=None, figsize=(8, 6)) #changing plot field size
-# plt.show()
+plt.close('all')
+fig, ax = plt.subplots()
+
+for i in range(len(chanel_names_list)):
+    ax.plot(data_table['Date'], data_table[chanel_names_list[i]], label=chanel_names_list[i])
+
+plt.grid() #turn on grid
+
+plt.legend(chanel_names_list)
+plt.xlabel('Date/Time')
+plt.ylabel('Temperature, F')
+
+fig.autofmt_xdate()
+
+
+plt.show()
 
 
 
