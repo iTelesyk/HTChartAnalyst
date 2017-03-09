@@ -64,10 +64,7 @@ def find_next_hour_point_index (date: np.array, prev_index: "index of previous p
         return -2
     hour_increment = 1
     pp = date[prev_index] #previous point
-    if pp.hour < 23:
-        next_point = dt.datetime(hour=pp.hour + hour_increment, year=pp.year, month=pp.month, day=pp.day,  minute= pp.minute) #creates next point w/ hour increment and w/o seconds
-    else:
-        next_point = dt.datetime(hour=0, year=pp.year, month=pp.month, day=pp.day+1, minute=pp.minute)  # creates next point w/ hour increment and w/o seconds
+    next_point = pp.replace(second=0, microsecond=0) + dt.timedelta(hours=hour_increment) # creates next point w/ hour increment and w/o seconds
     lager_that_point = date[date >= next_point] #creates list of timepoints starting with given amount of hours and minutes
     if len(lager_that_point)>0:
         point = lager_that_point[0] #picks first point from list
