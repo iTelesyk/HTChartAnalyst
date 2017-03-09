@@ -64,7 +64,7 @@ def find_next_hour_point_index (date: np.array, prev_index: "index of previous p
         return -2
     hour_increment = 1
     pp = date[prev_index] #previous point
-    next_point = pp.replace(second=0, microsecond=0) + dt.timedelta(hours=hour_increment) # creates next point w/ hour increment and w/o seconds
+    next_point = pp.replace(second=0, microsecond=0) + dt.timedelta(hours=hour_increment) # creates next point w/ hour increment and w/o seconds and microsecond
     lager_that_point = date[date >= next_point] #creates list of timepoints starting with given amount of hours and minutes
     if len(lager_that_point)>0:
         point = lager_that_point[0] #picks first point from list
@@ -165,15 +165,22 @@ for chnl in ('Top', 'Btn'):
     ef_sr.channel[chnl].sr_duration = data_table['Date'][ef_sr.channel[chnl].ref_points['sr_end_index']] - data_table['Date'][ef_sr.channel[chnl].ref_points['sr_start_index']]
 
 # ------------------Printing result to console ------------------
-print('Oven load temperature: {:3.0f} F'.format(ef_sr.oven_start_load_temp))
+tb_text = ''
+text = 'Oven load temperature: {:3.0f} F'.format(ef_sr.oven_start_load_temp)
+print(text)
+tb_text += text + '\n'
 for chnl in ('Top', 'Btn'):
     print('Channel: ', chnl, ' Heating up:')
     for i in range(len(ef_sr.channel[chnl].ht.timepoints)):
         print('Time: {0:%H:%M:%S} Temperature: {1:3.1f}'.format(ef_sr.channel[chnl].ht.timepoints[i],ef_sr.channel[chnl].ht.temps[i]))
-    print('Channel:  {0:3s}  Max heating rate: {1:3.0f} F/hour'.format(chnl,ef_sr.channel[chnl].ht.max_rate))
+    text = 'Channel:  {0:3s}  Max heating rate: {1:3.0f} F/hour'.format(chnl,ef_sr.channel[chnl].ht.max_rate)
+    print(text)
+    tb_text += text + '\n'
 
     td = ef_sr.channel[chnl].sr_duration
-    print('Channel: {0} Stress relief duration: {1}'.format(chnl, dt.timedelta(seconds=td.seconds)))
+    text = 'Channel: {0} Stress relief duration: {1}'.format(chnl, dt.timedelta(seconds=td.seconds))
+    print(text)
+    tb_text += text + '\n'
 
     print('Channel: ', chnl, ' Cooling down:')
     for i in range(len(ef_sr.channel[chnl].cl.timepoints)):
@@ -184,7 +191,7 @@ for chnl in ('Top', 'Btn'):
 
 #Adding line on graph for each chanel
 plt.close('all')
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(1)
 
 for i in range(len(chanel_names_list)):
     ax.plot(data_table['Date'], data_table[chanel_names_list[i]], label=chanel_names_list[i])
@@ -195,9 +202,13 @@ plt.legend(chanel_names_list)
 plt.xlabel('Date/Time')
 plt.ylabel('Temperature, F')
 
+# these are matplotlib.patch.Patch properties
+props = dict(facecolor='white', alpha = 1)
+
+# place a text box in upper left in axes coords
+ax.text(0.3, 0.5, tb_text, transform=ax.transAxes, verticalalignment='top', bbox=props) #fontsize=14
+
 fig.autofmt_xdate()
-
-
 plt.show()
 
 
